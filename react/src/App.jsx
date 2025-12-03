@@ -1,35 +1,75 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React, { useState, useEffect } from "react";
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [task, setTask] = useState("");
+  const [todos, setTodos] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("todos") || "[]");
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem("todos", JSON.stringify(todos));
+  }, [todos]);
+
+  function addTodo(e) {
+    e.preventDefault();
+    const text = task.trim();
+    if (!text) return;
+    setTodos(prev => [{ id: Date.now(), text, done: false }, ...prev]);
+    setTask("");
+  }
+
+  function toggleDone(id) {
+    setTodos(prev => prev.map(t => (t.id === id ? { ...t, done: !t.done } : t)));
+  }
+
+  function removeTodo(id) {
+    setTodos(prev => prev.filter(t => t.id !== id));
+  }
+
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
+    <div className="page">
       <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+        <header className="card-header">
+          <h1 className="title">To‑Do</h1>
+          <p className="subtitle">{todos.length} item{todos.length !== 1 ? "s" : ""}</p>
+        </header>
 
-export default App
+        <form className="input-row" onSubmit={addTodo}>
+          <input
+            className="input"
+            value={task}
+            onChange={e => setTask(e.target.value)}
+            placeholder="Add a new task..."
+            aria-label="New task"
+          />
+          <button className="btn primary" type="submit">Add</button>
+        </form>
+
+        <ul className="list">
+          {todos.map(t => (
+            <li key={t.id} className={`list-item ${t.done ? "done" : ""}`}>
+              <label className="item-left">
+                <input
+                  type="checkbox"
+                  checked={t.done}
+                  onChange={() => toggleDone(t.id)}
+                />
+                <span className="item-text">{t.text}</span>
+              </label>
+
+              <div className="item-actions">
+                <button className="btn ghost" onClick={() => removeTodo(t.id)}>Delete</button>
+              </div>
+            </li>
+          ))}
+          {todos.length === 0 && <li className="empty">No tasks yet — add one above.</li>}
+        </ul>
+      </div>
+    </div>
+  );
+}
